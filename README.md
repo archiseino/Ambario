@@ -10,7 +10,7 @@ Part of Final Project of Multimedia
 work on progress untuk logbook
 ## Minggu 1 
 - Inisialisasi github repo dan github project management untuk manajemen tugas besar "Digitial Signal Processing"
-- Pembagian tugas antara Arsyadana, Fransiskus, dan Tobyanto 
+- Pembagian tugas antara Arsyadana, Fatur, Alfath
 ## Minggu 2 
 -
 ## Minggu 3 
