@@ -85,6 +85,7 @@ class Player(pygame.sprite.Sprite):
     def animation_state(self):
         if self.rect.bottom < 430:
             self.image = self.player_jump
+            self.rect.x += 2
         else:
             self.rect.x += 2
             self.player_index += 0.1
@@ -112,9 +113,9 @@ class Game:
 
         # Define platform layouts
         self.platform_layouts = [
-            [(0, 430), (200, 350), (400, 270), (600, 190), (800, 110), (1000, 30), (1200, 430)],  # Layout 1
-            [(0, 430), (150, 350), (300, 270), (450, 190), (600, 110), (750, 30), (900, 430)],   # Layout 2
-            [(0, 430), (100, 350), (200, 270), (300, 190), (400, 110), (500, 30), (600, 430)]    # Layout 3
+            [(0, 430), (300, 350), (600, 270), (900, 190), (1200, 110), (1500, 30), (1800, 430)],  # Layout 1
+            [(0, 430), (350, 350), (700, 270), (1050, 190), (1400, 110), (1750, 30), (2100, 430)],  # Layout 2
+            [(0, 430), (400, 350), (800, 270), (1200, 190), (1600, 110), (2000, 30), (2400, 430)]   # Layout 3
         ]
 
         # Randomly select a platform layout
@@ -145,6 +146,22 @@ class Game:
                     self.player.sprite.jump()
 
                 self.player.update()
+
+                # Collision detection
+                player_rect = self.player.sprite.rect
+                for platform in self.platforms:
+                    if player_rect.colliderect(platform):
+                        # Adjust player's position based on collision
+                        if player_rect.bottom > platform.top and player_rect.top < platform.top:
+                            player_rect.bottom = platform.top
+                            self.player.sprite.on_ground = True
+                        elif player_rect.top < platform.bottom and player_rect.bottom > platform.bottom:
+                            player_rect.top = platform.bottom
+                        elif player_rect.right > platform.left and player_rect.left < platform.left:
+                            player_rect.right = platform.left
+                        elif player_rect.left < platform.right and player_rect.right > platform.right:
+                            player_rect.left = platform.right
+
                 self.player.draw(self.screen)
 
                 # Draw the platforms
