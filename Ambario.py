@@ -1,15 +1,10 @@
-"""
-Note: There's no way you can use the pygame and opencv to record the frame with threading 
-since the natrue of the different looping on the both methods (pygame loop vs opencv loop)
-If there's some method to do this efficiently, I guess we can do that better
-"""
-
 import pygame
 import cv2
 import numpy as np
 import pyaudio
 import wave
 import threading
+import random
 
 class AudioRecorder(threading.Thread):
     def __init__(self, filename="output.wav", rate=44100, frames_per_buffer=1024):
@@ -58,6 +53,45 @@ class AudioRecorder(threading.Thread):
             wavefile.setframerate(self.rate)
             wavefile.writeframes(b''.join(self.audio_frames))
 
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.player_walk = [
+            pygame.image.load('Model/Mario - Walk1.gif').convert_alpha(),
+            pygame.image.load('Model/Mario - Walk2.gif').convert_alpha(),
+            pygame.image.load('Model/Mario - Walk3.gif').convert_alpha()
+        ]
+        self.player_jump = pygame.image.load("Model/Mario - Jump.gif").convert_alpha()
+        self.image = self.player_walk[0]
+        self.rect = self.image.get_rect(midbottom=(80, 300))
+        self.gravity = 0
+        self.player_index = 0
+
+    def apply_gravity(self):
+        self.gravity += 0.5
+        self.rect.y += self.gravity
+        if self.rect.bottom >= 430:
+            self.rect.bottom = 430
+            self.gravity = 0
+
+    def jump(self):
+        if self.rect.bottom >= 430:
+            self.gravity = -15
+
+    def update(self):
+        self.apply_gravity()
+        self.animation_state()
+
+    def animation_state(self):
+        if self.rect.bottom < 430:
+            self.image = self.player_jump
+        else:
+            self.rect.x += 2
+            self.player_index += 0.1
+            if self.player_index >= len(self.player_walk):
+                self.player_index = 0
+            self.image = self.player_walk[int(self.player_index)]
+
 class Game:
     def __init__(self):
         pygame.init()
@@ -66,10 +100,9 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
 
-        self.platform = pygame.Rect(0, 430, 640, 50)
-        self.sprite = pygame.Rect(200, 400, 50, 50)
-        self.sprite_velocity = 10
-        self.on_ground = False
+        self.platform_image = pygame.image.load("Model/ground.png").convert_alpha()
+        self.platform_rect = self.platform_image.get_rect(topleft=(0, 430))
+        self.player = pygame.sprite.GroupSingle(Player())
 
         self.video_cap = cv2.VideoCapture(0)
         self.fourcc = cv2.VideoWriter_fourcc(*"XVID")
@@ -77,18 +110,19 @@ class Game:
 
         self.audio_recorder = AudioRecorder()
 
+        # Define platform layouts
+        self.platform_layouts = [
+            [(0, 430), (200, 350), (400, 270), (600, 190), (800, 110), (1000, 30), (1200, 430)],  # Layout 1
+            [(0, 430), (150, 350), (300, 270), (450, 190), (600, 110), (750, 30), (900, 430)],   # Layout 2
+            [(0, 430), (100, 350), (200, 270), (300, 190), (400, 110), (500, 30), (600, 430)]    # Layout 3
+        ]
+
+        # Randomly select a platform layout
+        self.selected_layout = random.choice(self.platform_layouts)
+        self.platforms = [pygame.Rect(x, y, self.platform_rect.width, self.platform_rect.height) for x, y in self.selected_layout]
+
     def detect_scream(self, volume, threshold=1000):
         return volume > threshold
-
-    def apply_gravity(self):
-        self.sprite.y += self.sprite_velocity
-        self.sprite_velocity += 0.5
-        if self.sprite.colliderect(self.platform):
-            self.sprite.y = self.platform.y - self.sprite.height
-            self.sprite_velocity = 0
-            self.on_ground = True
-        else:
-            self.on_ground = False
 
     def run(self):
         self.audio_recorder.start()
@@ -107,14 +141,15 @@ class Game:
                 self.screen.blit(frame_surface, (0, 0))
 
                 current_volume = self.audio_recorder.volume
-                if self.detect_scream(current_volume) and self.on_ground:
-                    self.sprite_velocity = -10
-                    self.on_ground = False
+                if self.detect_scream(current_volume):
+                    self.player.sprite.jump()
 
-                self.apply_gravity()
+                self.player.update()
+                self.player.draw(self.screen)
 
-                pygame.draw.rect(self.screen, (0, 255, 0), self.platform)
-                pygame.draw.rect(self.screen, (255, 255, 255), self.sprite)
+                # Draw the platforms
+                for platform in self.platforms:
+                    self.screen.blit(self.platform_image, platform)
 
                 pygame.display.update()
 
@@ -125,6 +160,11 @@ class Game:
                 self.out.write(frame_for_video)
 
                 self.clock.tick(15)
+
+                # Check if player has reached the finish line
+                if self.player.sprite.rect.colliderect(self.platforms[-1]):
+                    print("Congratulations! You've reached the finish line!")
+                    self.running = False
 
         self.audio_recorder.stop()
         self.audio_recorder.save()
