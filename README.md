@@ -16,7 +16,11 @@ This will create an enviroment with the name of `py310_multimedia`. You can acti
 conda activate py310_multimedia
 ```
 
-Also for the record the successful proto is the `Codelab-1.py` program (right now)
+Also for the record the successful proto is the `Ambario.py` program (right now)
+
+```
+python Ambario.py
+```
 
 ## Members
 
@@ -46,3 +50,7 @@ work on progress untuk logbook
 ## Minggu 4
 
 -
+
+```
+
+```
