@@ -63,19 +63,17 @@ class Player(pygame.sprite.Sprite):
         ]
         self.player_jump = pygame.image.load("Model/Mario - Jump.gif").convert_alpha()
         self.image = self.player_walk[0]
-        self.rect = self.image.get_rect(midbottom=(80, 300))
+        self.rect = self.image.get_rect(midbottom=(80, 430))
         self.gravity = 0
         self.player_index = 0
+        self.on_ground = True
 
     def apply_gravity(self):
         self.gravity += 0.5
         self.rect.y += self.gravity
-        if self.rect.bottom >= 430:
-            self.rect.bottom = 430
-            self.gravity = 0
 
     def jump(self):
-        if self.rect.bottom >= 430:
+        if self.on_ground:
             self.gravity = -15
 
     def update(self):
@@ -83,16 +81,14 @@ class Player(pygame.sprite.Sprite):
         self.animation_state()
 
     def animation_state(self):
-        if self.rect.bottom < 430:
+        if not self.on_ground:
             self.image = self.player_jump
-            self.rect.x += 2
         else:
-            self.rect.x += 2
             self.player_index += 0.1
             if self.player_index >= len(self.player_walk):
                 self.player_index = 0
             self.image = self.player_walk[int(self.player_index)]
-
+        self.rect.x += 2  # Move the player to the right
 class Game:
     def __init__(self):
         pygame.init()
@@ -101,7 +97,9 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
 
+        # Load and resize the platform image
         self.platform_image = pygame.image.load("Model/ground.png").convert_alpha()
+        self.platform_image = pygame.transform.scale(self.platform_image, (400, 50))  # Resize to (width, height)
         self.platform_rect = self.platform_image.get_rect(topleft=(0, 430))
         self.player = pygame.sprite.GroupSingle(Player())
 
@@ -121,6 +119,9 @@ class Game:
         # Randomly select a platform layout
         self.selected_layout = random.choice(self.platform_layouts)
         self.platforms = [pygame.Rect(x, y, self.platform_rect.width, self.platform_rect.height) for x, y in self.selected_layout]
+
+        # Speed at which platforms move to the left
+        self.platform_speed = 5
 
     def detect_scream(self, volume, threshold=1000):
         return volume > threshold
@@ -147,14 +148,20 @@ class Game:
 
                 self.player.update()
 
+                # Update platform positions
+                for platform in self.platforms:
+                    platform.x -= self.platform_speed
+
                 # Collision detection
                 player_rect = self.player.sprite.rect
+                self.player.sprite.on_ground = False  # Reset on_ground status
                 for platform in self.platforms:
                     if player_rect.colliderect(platform):
                         # Adjust player's position based on collision
                         if player_rect.bottom > platform.top and player_rect.top < platform.top:
                             player_rect.bottom = platform.top
                             self.player.sprite.on_ground = True
+                            self.player.sprite.gravity = 0  # Reset gravity when on platform
                         elif player_rect.top < platform.bottom and player_rect.bottom > platform.bottom:
                             player_rect.top = platform.bottom
                         elif player_rect.right > platform.left and player_rect.left < platform.left:
@@ -162,6 +169,7 @@ class Game:
                         elif player_rect.left < platform.right and player_rect.right > platform.right:
                             player_rect.left = platform.right
 
+                # Allow jumping only if the player is on the ground
                 self.player.draw(self.screen)
 
                 # Draw the platforms
