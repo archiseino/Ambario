@@ -53,6 +53,13 @@ class AudioRecorder(threading.Thread):
             wavefile.setframerate(self.rate)
             wavefile.writeframes(b''.join(self.audio_frames))
 
+class Block(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("Model/chicken.png").convert_alpha()
+        self.imge = pygame.transform.scale(self.image, (10, 10))
+        self.rect = self.image.get_rect(midbottom=(x, y))
+
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -69,12 +76,12 @@ class Player(pygame.sprite.Sprite):
         self.on_ground = True
 
     def apply_gravity(self):
-        self.gravity += 0.5
+        self.gravity += 1
         self.rect.y += self.gravity
 
-    def jump(self):
+    def jump(self, jump_force):
         if self.on_ground:
-            self.gravity = -15
+            self.gravity = jump_force
 
     def update(self):
         self.apply_gravity()
@@ -88,7 +95,7 @@ class Player(pygame.sprite.Sprite):
             if self.player_index >= len(self.player_walk):
                 self.player_index = 0
             self.image = self.player_walk[int(self.player_index)]
-        self.rect.x += 2  # Move the player to the right
+        self.rect.x += 1  # Move the player to the right
 class Game:
     def __init__(self):
         pygame.init()
@@ -99,7 +106,7 @@ class Game:
 
         # Load and resize the platform image
         self.platform_image = pygame.image.load("Model/ground.png").convert_alpha()
-        self.platform_image = pygame.transform.scale(self.platform_image, (400, 50))  # Resize to (width, height)
+        self.platform_image = pygame.transform.scale(self.platform_image, (200, 50))  # Resize to (width, height)
         self.platform_rect = self.platform_image.get_rect(topleft=(0, 430))
         self.player = pygame.sprite.GroupSingle(Player())
 
@@ -111,20 +118,34 @@ class Game:
 
         # Define platform layouts
         self.platform_layouts = [
-            [(0, 430), (300, 350), (600, 270), (900, 190), (1200, 110), (1500, 30), (1800, 430)],  # Layout 1
-            [(0, 430), (350, 350), (700, 270), (1050, 190), (1400, 110), (1750, 30), (2100, 430)],  # Layout 2
-            [(0, 430), (400, 350), (800, 270), (1200, 190), (1600, 110), (2000, 30), (2400, 430)]   # Layout 3
+            {
+                "platforms": [(0, 430), (300, 430), (600, 430), (900, 430), (1200, 430), (1500, 430), (1800, 430)],
+                "blocks": [(400, 380), (700, 300), (1000, 220)]  # Example block positions
+            }
         ]
 
         # Randomly select a platform layout
         self.selected_layout = random.choice(self.platform_layouts)
-        self.platforms = [pygame.Rect(x, y, self.platform_rect.width, self.platform_rect.height) for x, y in self.selected_layout]
+        self.platforms = [pygame.Rect(x, y, self.platform_rect.width, self.platform_rect.height) for x, y in self.selected_layout["platforms"]]
+
+        # Initialize blocks
+        self.blocks = pygame.sprite.Group()
+        for x, y in self.selected_layout["blocks"]:
+            self.blocks.add(Block(x, y))
+
+        # Define the finish line
+        self.finish_line = pygame.Rect(self.platforms[-1].right, self.platforms[-1].top, 10, self.platforms[-1].height)
 
         # Speed at which platforms move to the left
         self.platform_speed = 5
 
-    def detect_scream(self, volume, threshold=1000):
-        return volume > threshold
+    def detect_scream(self, volume, threshold=500):
+        print(volume)
+        if volume > threshold:
+            # Calculate jump force based on volume
+            jump_force = min(-5 - (volume - threshold) / 250, -15) # Cap the jump force to -15
+            return jump_force
+        return 0
 
     def run(self):
         self.audio_recorder.start()
@@ -143,14 +164,22 @@ class Game:
                 self.screen.blit(frame_surface, (0, 0))
 
                 current_volume = self.audio_recorder.volume
-                if self.detect_scream(current_volume):
-                    self.player.sprite.jump()
+                jump_force = self.detect_scream(current_volume)
+                if jump_force:    
+                    self.player.sprite.jump(jump_force)
 
                 self.player.update()
 
                 # Update platform positions
                 for platform in self.platforms:
                     platform.x -= self.platform_speed
+
+                # Update block positions
+                for block in self.blocks:
+                    block.rect.x -= self.platform_speed
+
+                # Update finish line position
+                self.finish_line.x -= self.platform_speed
 
                 # Collision detection
                 player_rect = self.player.sprite.rect
@@ -176,6 +205,9 @@ class Game:
                 for platform in self.platforms:
                     self.screen.blit(self.platform_image, platform)
 
+                # Draw the blocks
+                self.blocks.draw(self.screen)
+
                 pygame.display.update()
 
                 # Convert Pygame surface to a format OpenCV understands (RGB -> BGR)
@@ -187,7 +219,7 @@ class Game:
                 self.clock.tick(15)
 
                 # Check if player has reached the finish line
-                if self.player.sprite.rect.colliderect(self.platforms[-1]):
+                if self.player.sprite.rect.colliderect(self.finish_line):
                     print("Congratulations! You've reached the finish line!")
                     self.running = False
 
