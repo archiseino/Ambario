@@ -56,9 +56,19 @@ class AudioRecorder(threading.Thread):
 class Block(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.image.load("Model/chicken.png").convert_alpha()
-        self.imge = pygame.transform.scale(self.image, (10, 10))
+        self.images = [
+            pygame.image.load("Model/piranha_frame_1.png").convert_alpha(),
+            pygame.image.load("Model/piranha_frame_2.png").convert_alpha()
+        ]
+        self.image = self.images[0]
         self.rect = self.image.get_rect(midbottom=(x, y))
+        self.index = 0
+    
+    def update(self):
+        self.index += 0.1
+        if self.index >= len(self.images):
+            self.index = 0
+        self.image = self.images[int(self.index)]
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -70,7 +80,7 @@ class Player(pygame.sprite.Sprite):
         ]
         self.player_jump = pygame.image.load("Model/Mario - Jump.gif").convert_alpha()
         self.image = self.player_walk[0]
-        self.rect = self.image.get_rect(midbottom=(80, 430))
+        self.rect = self.image.get_rect(midbottom=(0, 300))
         self.gravity = 0
         self.player_index = 0
         self.on_ground = True
@@ -107,8 +117,21 @@ class Game:
         # Load and resize the platform image
         self.platform_image = pygame.image.load("Model/ground.png").convert_alpha()
         self.platform_image = pygame.transform.scale(self.platform_image, (200, 50))  # Resize to (width, height)
-        self.platform_rect = self.platform_image.get_rect(topleft=(0, 430))
         self.player = pygame.sprite.GroupSingle(Player())
+
+        ## Pipe Image
+        self.pipe_image = pygame.image.load("Model/pipe.gif").convert_alpha()
+        self.pipe_image = pygame.transform.scale(self.pipe_image, (120, 400))
+
+        ## Ocean image  
+        self.ocean = pygame.image.load("Model/ocean-1.png").convert_alpha()
+        self.ocean = pygame.transform.scale(self.ocean, (640, 480))
+        self.ocean_rect = self.ocean.get_rect(midbottom=(0, 0))
+
+        ## Castle Image
+        self.castle_image = pygame.image.load("Model/Castle.png").convert_alpha()
+        self.castle_image = pygame.transform.scale(self.castle_image, (100, 100))
+
 
         self.video_cap = cv2.VideoCapture(0)
         self.fourcc = cv2.VideoWriter_fourcc(*"XVID")
@@ -116,34 +139,36 @@ class Game:
 
         self.audio_recorder = AudioRecorder()
 
-        # Define platform layouts
+        ## Bottom Limit for the Platforms is aroudn 400 since we have Wave
         self.platform_layouts = [
             {
-                "platforms": [(0, 430), (300, 430), (600, 430), (900, 430), (1200, 430), (1500, 430), (1800, 430)],
-                "blocks": [(400, 380), (700, 300), (1000, 220)]  # Example block positions
+                "platforms": [(0, 350), (300, 350), (600, 350), (900, 350), (1200, 350)],
+                "blocks": [(400, 350), (700, 350), (1000, 350)]  # Example block positions
             }
         ]
 
-        # Randomly select a platform layout
-        self.selected_layout = random.choice(self.platform_layouts)
-        self.platforms = [pygame.Rect(x, y, self.platform_rect.width, self.platform_rect.height) for x, y in self.selected_layout["platforms"]]
+        self.platforms = []
+        self.pipes = []
+        for layout in self.platform_layouts:
+            for pos in layout["platforms"]:
+                platform_rect = self.platform_image.get_rect(topleft=pos)
+                self.platforms.append(platform_rect)
+                pipe_rect = self.pipe_image.get_rect(midtop=(pos[0] + platform_rect.width // 2, pos[1] + platform_rect.height))
+                self.pipes.append(pipe_rect)
 
-        # Initialize blocks
         self.blocks = pygame.sprite.Group()
-        for x, y in self.selected_layout["blocks"]:
-            self.blocks.add(Block(x, y))
+        for layout in self.platform_layouts:
+            for pos in layout["blocks"]:
+                self.blocks.add(Block(pos[0], pos[1]))
 
-        # Define the finish line
-        self.finish_line = pygame.Rect(self.platforms[-1].right, self.platforms[-1].top, 10, self.platforms[-1].height)
-
-        # Speed at which platforms move to the left
+        # Place the castle at the end of the last platform
+        last_platform = self.platforms[-1]
+        self.castle_rect = self.castle_image.get_rect(midbottom=(last_platform.left + last_platform.width // 2, last_platform.top + 5))
         self.platform_speed = 5
 
     def detect_scream(self, volume, threshold=500):
-        print(volume)
         if volume > threshold:
-            # Calculate jump force based on volume
-            jump_force = min(-5 - (volume - threshold) / 250, -15) # Cap the jump force to -15
+            jump_force = min(-5 - (volume - threshold) / 250, -15)
             return jump_force
         return 0
 
@@ -165,32 +190,32 @@ class Game:
 
                 current_volume = self.audio_recorder.volume
                 jump_force = self.detect_scream(current_volume)
-                if jump_force:    
+                if jump_force:
                     self.player.sprite.jump(jump_force)
 
                 self.player.update()
+                self.blocks.update()
 
-                # Update platform positions
                 for platform in self.platforms:
                     platform.x -= self.platform_speed
 
-                # Update block positions
+                for pipe in self.pipes:
+                    pipe.x -= self.platform_speed
+
                 for block in self.blocks:
                     block.rect.x -= self.platform_speed
 
-                # Update finish line position
-                self.finish_line.x -= self.platform_speed
+                self.castle_rect.x -= self.platform_speed
 
-                # Collision detection
+
                 player_rect = self.player.sprite.rect
-                self.player.sprite.on_ground = False  # Reset on_ground status
+                self.player.sprite.on_ground = False
                 for platform in self.platforms:
                     if player_rect.colliderect(platform):
-                        # Adjust player's position based on collision
                         if player_rect.bottom > platform.top and player_rect.top < platform.top:
                             player_rect.bottom = platform.top
                             self.player.sprite.on_ground = True
-                            self.player.sprite.gravity = 0  # Reset gravity when on platform
+                            self.player.sprite.gravity = 0
                         elif player_rect.top < platform.bottom and player_rect.bottom > platform.bottom:
                             player_rect.top = platform.bottom
                         elif player_rect.right > platform.left and player_rect.left < platform.left:
@@ -198,19 +223,29 @@ class Game:
                         elif player_rect.left < platform.right and player_rect.right > platform.right:
                             player_rect.left = platform.right
 
-                # Allow jumping only if the player is on the ground
-                self.player.draw(self.screen)
+                # Check collision with blocks
+                for block in self.blocks:
+                    if player_rect.colliderect(block.rect):
+                        print("Collision with block!")
+                        # Handle collision (e.g., end game, reduce health, etc.)
 
-                # Draw the platforms
+                self.player.draw(self.screen)
                 for platform in self.platforms:
                     self.screen.blit(self.platform_image, platform)
-
-                # Draw the blocks
+                for pipe in self.pipes:
+                    self.screen.blit(self.pipe_image, pipe)
                 self.blocks.draw(self.screen)
+
+                # Draw the castle
+                self.screen.blit(self.castle_image, self.castle_rect)
+
+                # Draw the ocean
+                self.screen.blit(self.ocean, self.ocean_rect)
+
+
 
                 pygame.display.update()
 
-                # Convert Pygame surface to a format OpenCV understands (RGB -> BGR)
                 frame_for_video = np.array(pygame.surfarray.pixels3d(self.screen))
                 frame_for_video = np.transpose(frame_for_video, (1, 0, 2))
                 frame_for_video = cv2.cvtColor(frame_for_video, cv2.COLOR_RGB2BGR)
@@ -218,9 +253,9 @@ class Game:
 
                 self.clock.tick(15)
 
-                # Check if player has reached the finish line
-                if self.player.sprite.rect.colliderect(self.finish_line):
-                    print("Congratulations! You've reached the finish line!")
+                # Check collision with castle
+                if player_rect.colliderect(self.castle_rect):
+                    print("Congratulations! You've reached the castle!")
                     self.running = False
 
         self.audio_recorder.stop()
