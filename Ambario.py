@@ -4,10 +4,10 @@ import numpy as np
 import pyaudio
 import wave
 import threading
-import random
+import time
 
 class AudioRecorder(threading.Thread):
-    def __init__(self, filename="output.wav", rate=44100, frames_per_buffer=1024):
+    def __init__(self, filename="output.wav", rate=44100, frames_per_buffer=1048):
         super(AudioRecorder, self).__init__()
         self.filename = filename
         self.rate = rate
@@ -80,10 +80,11 @@ class Player(pygame.sprite.Sprite):
         ]
         self.player_jump = pygame.image.load("Model/Mario - Jump.gif").convert_alpha()
         self.image = self.player_walk[0]
-        self.rect = self.image.get_rect(midbottom=(0, 300))
+        self.rect = self.image.get_rect(midbottom=(100, 350))
         self.gravity = 0
         self.player_index = 0
         self.on_ground = True
+        self.dead = False
 
     def apply_gravity(self):
         self.gravity += 1
@@ -93,9 +94,17 @@ class Player(pygame.sprite.Sprite):
         if self.on_ground:
             self.gravity = jump_force
 
+    def die(self):
+        self.dead = True
+        self.gravity = -15  # Initial jump force for death animation
+
     def update(self):
-        self.apply_gravity()
-        self.animation_state()
+        if not self.dead:
+            self.apply_gravity()
+            self.animation_state()
+        else:
+            self.apply_gravity()
+            self.image = self.player_death
 
     def animation_state(self):
         if not self.on_ground:
@@ -126,7 +135,7 @@ class Game:
         ## Ocean image  
         self.ocean = pygame.image.load("Model/ocean-1.png").convert_alpha()
         self.ocean = pygame.transform.scale(self.ocean, (640, 480))
-        self.ocean_rect = self.ocean.get_rect(midbottom=(0, 0))
+        self.ocean_rect = self.ocean.get_rect(topleft=(0, 165))
 
         ## Castle Image
         self.castle_image = pygame.image.load("Model/Castle.png").convert_alpha()
@@ -139,11 +148,11 @@ class Game:
 
         self.audio_recorder = AudioRecorder()
 
-        ## Bottom Limit for the Platforms is aroudn 400 since we have Wave
+        ## Bottom Limit for the Platforms is aroudn 400 since we have Wave that will block the view of the platforms
         self.platform_layouts = [
             {
-                "platforms": [(0, 350), (300, 350), (600, 350), (900, 350), (1200, 350)],
-                "blocks": [(400, 350), (700, 350), (1000, 350)]  # Example block positions
+                "platforms": [(100, 350), (400, 300), (700, 250), (1000, 300), (1300, 250)],
+                "blocks": [(420, 300), (780, 250), (1100, 300)]  # Example block positions
             }
         ]
 
@@ -172,10 +181,24 @@ class Game:
             return jump_force
         return 0
 
+    def overlay_text(self, text, size, color, position):
+        """Overlay text on the screen."""
+        font = pygame.font.Font(None, size)
+        text_surface = font.render(text, True, color)
+        text_rect = text_surface.get_rect(center=position)
+        self.screen.blit(text_surface, text_rect)
+
     def run(self):
         self.audio_recorder.start()
 
+        countdown_seconds = 3
+        countdown_start_time = time.time()
+        show_congratulations = False
+
         while self.running:
+            current_time = time.time()
+            elapsed_time = current_time - countdown_start_time
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -188,61 +211,77 @@ class Game:
                 frame_surface = pygame.surfarray.make_surface(frame)
                 self.screen.blit(frame_surface, (0, 0))
 
-                current_volume = self.audio_recorder.volume
-                jump_force = self.detect_scream(current_volume)
-                if jump_force:
-                    self.player.sprite.jump(jump_force)
+                if elapsed_time < countdown_seconds:
+                    self.overlay_text(str(countdown_seconds - int(elapsed_time)), 74, (255, 255, 255), (320, 240))
+                else:
+                    current_volume = self.audio_recorder.volume
+                    jump_force = self.detect_scream(current_volume)
+                    if jump_force:
+                        self.player.sprite.jump(jump_force)
 
-                self.player.update()
-                self.blocks.update()
+                    self.player.update()
+                    self.blocks.update()
 
-                for platform in self.platforms:
-                    platform.x -= self.platform_speed
+                    for platform in self.platforms:
+                        platform.x -= self.platform_speed
 
-                for pipe in self.pipes:
-                    pipe.x -= self.platform_speed
+                    for pipe in self.pipes:
+                        pipe.x -= self.platform_speed
 
-                for block in self.blocks:
-                    block.rect.x -= self.platform_speed
+                    for block in self.blocks:
+                        block.rect.x -= self.platform_speed
 
-                self.castle_rect.x -= self.platform_speed
+                    self.castle_rect.x -= self.platform_speed
 
+                    player_rect = self.player.sprite.rect
+                    self.player.sprite.on_ground = False
+                    for platform in self.platforms:
+                        if player_rect.colliderect(platform):
+                            if player_rect.bottom > platform.top and player_rect.top < platform.top:
+                                player_rect.bottom = platform.top
+                                self.player.sprite.on_ground = True
+                                self.player.sprite.gravity = 0
+                            elif player_rect.top < platform.bottom and player_rect.bottom > platform.bottom:
+                                player_rect.top = platform.bottom
+                            elif player_rect.right > platform.left and player_rect.left < platform.left:
+                                player_rect.right = platform.left
+                            elif player_rect.left < platform.right and player_rect.right > platform.right:
+                                player_rect.left = platform.right
 
-                player_rect = self.player.sprite.rect
-                self.player.sprite.on_ground = False
-                for platform in self.platforms:
-                    if player_rect.colliderect(platform):
-                        if player_rect.bottom > platform.top and player_rect.top < platform.top:
-                            player_rect.bottom = platform.top
-                            self.player.sprite.on_ground = True
-                            self.player.sprite.gravity = 0
-                        elif player_rect.top < platform.bottom and player_rect.bottom > platform.bottom:
-                            player_rect.top = platform.bottom
-                        elif player_rect.right > platform.left and player_rect.left < platform.left:
-                            player_rect.right = platform.left
-                        elif player_rect.left < platform.right and player_rect.right > platform.right:
-                            player_rect.left = platform.right
+                    # Check collision with blocks
+                    for block in self.blocks:
+                        if player_rect.colliderect(block.rect):
+                            print("Collision with block!")
+                            self.player.sprite.die()
+                            self.running = False
 
-                # Check collision with blocks
-                for block in self.blocks:
-                    if player_rect.colliderect(block.rect):
-                        print("Collision with block!")
-                        # Handle collision (e.g., end game, reduce health, etc.)
+                    # Check if player falls off the screen
+                    if player_rect.top > self.screen.get_height():
+                        print("Player fell off the screen!")
+                        self.player.sprite.die()
+                        self.running = False
 
-                self.player.draw(self.screen)
-                for platform in self.platforms:
-                    self.screen.blit(self.platform_image, platform)
-                for pipe in self.pipes:
-                    self.screen.blit(self.pipe_image, pipe)
-                self.blocks.draw(self.screen)
+                    self.player.draw(self.screen)
+                    for platform in self.platforms:
+                        self.screen.blit(self.platform_image, platform)
+                    for pipe in self.pipes:
+                        self.screen.blit(self.pipe_image, pipe)
+                    self.blocks.draw(self.screen)
 
-                # Draw the castle
-                self.screen.blit(self.castle_image, self.castle_rect)
+                    # Draw the castle
+                    self.screen.blit(self.castle_image, self.castle_rect)
 
-                # Draw the ocean
-                self.screen.blit(self.ocean, self.ocean_rect)
+                    # Draw the ocean
+                    self.screen.blit(self.ocean, self.ocean_rect)
 
+                    # Check collision with castle
+                    if player_rect.colliderect(self.castle_rect):
+                        print("Congratulations! You've reached the castle!")
+                        show_congratulations = True
+                        self.running = False
 
+                if show_congratulations:
+                    self.overlay_text("Congratulations!", 74, (255, 255, 255), (320, 240))
 
                 pygame.display.update()
 
@@ -253,15 +292,20 @@ class Game:
 
                 self.clock.tick(15)
 
-                # Check collision with castle
-                if player_rect.colliderect(self.castle_rect):
-                    print("Congratulations! You've reached the castle!")
-                    self.running = False
-
         self.audio_recorder.stop()
         self.audio_recorder.save()
         self.video_cap.release()
         self.out.release()
+
+        if self.player.sprite.dead:
+            self.overlay_text("Game Over", 74, (255, 0, 0), (320, 240))
+            pygame.display.update()
+            time.sleep(3)
+        else:
+            self.overlay_text("Congratulations!", 74, (255, 255, 255), (320, 240))
+            pygame.display.update()
+            time.sleep(3)
+
         pygame.quit()
 
 if __name__ == "__main__":
