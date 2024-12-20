@@ -85,6 +85,9 @@ class Player(pygame.sprite.Sprite):
         self.player_index = 0
         self.on_ground = True
         self.dead = False
+        self.invincible = False
+        self.invincible_duration = 2  # seconds
+        self.last_hit_time = 0
 
     def apply_gravity(self):
         self.gravity += 1
@@ -98,10 +101,16 @@ class Player(pygame.sprite.Sprite):
         self.dead = True
         self.gravity = -15  # Initial jump force for death animation
 
+    def hit(self):
+        self.invincible = True
+        self.last_hit_time = time.time()
+
     def update(self):
         if not self.dead:
             self.apply_gravity()
             self.animation_state()
+            if self.invincible and (time.time() - self.last_hit_time) > self.invincible_duration:
+                self.invincible = False
         else:
             self.apply_gravity()
             self.image = self.player_death
@@ -115,6 +124,7 @@ class Player(pygame.sprite.Sprite):
                 self.player_index = 0
             self.image = self.player_walk[int(self.player_index)]
         self.rect.x += 1  # Move the player to the right
+
 class Game:
     def __init__(self):
         pygame.init()
@@ -122,6 +132,12 @@ class Game:
         pygame.display.set_caption("Jumping Game with Camera Background")
         self.clock = pygame.time.Clock()
         self.running = True
+        self.show_congratulations = False
+        self.show_game_over = False
+        self.message_start_time = 0
+        self.message_duration = 3  # seconds
+        self.score = 0
+        self.lives = 3
 
         # Load and resize the platform image
         self.platform_image = pygame.image.load("Model/ground.png").convert_alpha()
@@ -152,7 +168,7 @@ class Game:
         self.platform_layouts = [
             {
                 "platforms": [(100, 350), (400, 300), (700, 250), (1000, 300), (1300, 250)],
-                "blocks": [(420, 300), (780, 250), (1100, 300)]  # Example block positions
+                "blocks": [(450, 300), (780, 250), (1010, 300)]  # Example block positions
             }
         ]
 
@@ -188,12 +204,23 @@ class Game:
         text_rect = text_surface.get_rect(center=position)
         self.screen.blit(text_surface, text_rect)
 
+    def update_hud(self, volume = 0):
+        """Update the HUD with the current volume, score, and lives."""
+        font = pygame.font.Font(None, 36)
+        volume_text = font.render(f"Volume: {int(volume)}", True, (255, 255, 255))
+        score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
+        lives_text = font.render(f"Lives: {self.lives}", True, (255, 255, 255))
+
+        self.screen.blit(volume_text, (10, 10))
+        self.screen.blit(score_text, (10, 50))
+        self.screen.blit(lives_text, (10, 90))
+
     def run(self):
         self.audio_recorder.start()
 
         countdown_seconds = 3
         countdown_start_time = time.time()
-        show_congratulations = False
+        current_volume = 0  # Initialize current_volume
 
         while self.running:
             current_time = time.time()
@@ -252,13 +279,22 @@ class Game:
                     for block in self.blocks:
                         if player_rect.colliderect(block.rect):
                             print("Collision with block!")
-                            self.player.sprite.die()
-                            self.running = False
+                            if not self.player.sprite.invincible:
+                                self.player.sprite.hit()
+                                self.lives -= 1
+                                if self.lives <= 0:
+                                    self.player.sprite.die()
+                                    self.show_game_over = True
+                                    self.message_start_time = time.time()
+                                    self.running = False
 
                     # Check if player falls off the screen
                     if player_rect.top > self.screen.get_height():
                         print("Player fell off the screen!")
                         self.player.sprite.die()
+                        self.lives -= 1
+                        self.show_game_over = True
+                        self.message_start_time = time.time()
                         self.running = False
 
                     self.player.draw(self.screen)
@@ -277,11 +313,25 @@ class Game:
                     # Check collision with castle
                     if player_rect.colliderect(self.castle_rect):
                         print("Congratulations! You've reached the castle!")
-                        show_congratulations = True
+                        self.show_congratulations = True
+                        self.message_start_time = time.time()
                         self.running = False
 
-                if show_congratulations:
+                    # Update the score based on distance traveled
+                    self.score += 1
+
+                if self.show_congratulations:
                     self.overlay_text("Congratulations!", 74, (255, 255, 255), (320, 240))
+                    if (current_time - self.message_start_time) > self.message_duration:
+                        self.show_congratulations = False
+
+                if self.show_game_over:
+                    self.overlay_text("Game Over", 74, (255, 0, 0), (320, 240))
+                    if (current_time - self.message_start_time) > self.message_duration:
+                        self.show_game_over = False
+
+                # Update the HUD
+                self.update_hud(current_volume)
 
                 pygame.display.update()
 
@@ -292,19 +342,24 @@ class Game:
 
                 self.clock.tick(15)
 
+        # Ensure the final message is displayed for the specified duration
+        end_time = time.time()
+        while (time.time() - end_time) < self.message_duration:
+            if self.show_congratulations:
+                self.overlay_text("Congratulations!", 74, (255, 255, 255), (320, 240))
+            if self.show_game_over:
+                self.overlay_text("Game Over", 74, (255, 0, 0), (320, 240))
+            pygame.display.update()
+            frame_for_video = np.array(pygame.surfarray.pixels3d(self.screen))
+            frame_for_video = np.transpose(frame_for_video, (1, 0, 2))
+            frame_for_video = cv2.cvtColor(frame_for_video, cv2.COLOR_RGB2BGR)
+            self.out.write(frame_for_video)
+            self.clock.tick(15)
+
         self.audio_recorder.stop()
         self.audio_recorder.save()
         self.video_cap.release()
         self.out.release()
-
-        if self.player.sprite.dead:
-            self.overlay_text("Game Over", 74, (255, 0, 0), (320, 240))
-            pygame.display.update()
-            time.sleep(3)
-        else:
-            self.overlay_text("Congratulations!", 74, (255, 255, 255), (320, 240))
-            pygame.display.update()
-            time.sleep(3)
 
         pygame.quit()
 
