@@ -5,6 +5,13 @@ import pyaudio
 import wave
 import threading
 import time
+from moviepy import VideoFileClip, AudioFileClip
+
+def combine_audio_video(video_path, audio_path, output_path):
+    video = VideoFileClip(video_path)
+    audio = AudioFileClip(audio_path)
+    final_video = video.with_audio(audio)
+    final_video.write_videofile(output_path, codec="libx264", audio_codec="aac")
 
 class AudioRecorder(threading.Thread):
     def __init__(self, filename="output.wav", rate=44100, frames_per_buffer=1048):
@@ -161,8 +168,8 @@ class Game:
         self.video_cap = cv2.VideoCapture(0)
         self.fourcc = cv2.VideoWriter_fourcc(*"XVID")
         self.out = cv2.VideoWriter("output.avi", self.fourcc, 15, (640, 480))
-
         self.audio_recorder = AudioRecorder()
+        
 
         ## Bottom Limit for the Platforms is aroudn 400 since we have Wave that will block the view of the platforms
         self.platform_layouts = [
@@ -215,6 +222,7 @@ class Game:
         self.screen.blit(score_text, (10, 50))
         self.screen.blit(lives_text, (10, 90))
 
+ 
     def run(self):
         self.audio_recorder.start()
 
@@ -361,8 +369,12 @@ class Game:
         self.video_cap.release()
         self.out.release()
 
-        pygame.quit()
+        # Combine audio and video
+        combine_audio_video("output.avi", "output.wav", "final_output.avi")
+
+        pygame.quit()  
 
 if __name__ == "__main__":
     game = Game()
     game.run()
+    
