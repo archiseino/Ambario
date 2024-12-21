@@ -30,7 +30,7 @@ python Ambario.py
 - Alfath Elnandra (121140175) |
   Mas.El
 
-# Logbook mingguan yang mencatat progress dan update project
+# Weekly logbook that records project progress and updates
 
 Work on progress for logbook
 
