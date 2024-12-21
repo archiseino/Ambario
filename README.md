@@ -7,10 +7,10 @@ Part of Final Project of Multimedia
 - You can clone this repo first and create an environment using the conda with this command
 
 ```
-conda env create --file enviroment.yml
+conda env create --file environment.yml
 ```
 
-- This will create an enviroment with the name of `py310_multimedia`. You can activate by doing this
+- This will create an environment with the name of `py310_multimedia`. You can activate by doing this
 
 ```
 conda activate py310_multimedia
