@@ -174,7 +174,7 @@ class Game:
         ## Bottom Limit for the Platforms is aroudn 400 since we have Wave that will block the view of the platforms
         self.platform_layouts = [
             {
-                "platforms": [(100, 350), (400, 300), (700, 250), (1000, 300), (1300, 250)],
+                "platforms": [(100, 350), (400, 300), (700, 250), (1000, 300), (1300, 250), (1700, 175), (1900, 300), (2220, 350)],
                 "blocks": [(450, 300), (780, 250), (1010, 300)]  # Example block positions
             }
         ]
