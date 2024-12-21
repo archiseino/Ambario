@@ -32,22 +32,22 @@ python Ambario.py
 
 # Logbook mingguan yang mencatat progress dan update project
 
-work on progress untuk logbook
+Work on progress for logbook
 
-## Minggu 1
+## 1st Week
 
-- Inisialisasi github repo dan github project management untuk manajemen tugas besar "Technology of Multimedia"
-- Pembagian tugas antara Arsyadana, Fatur, Alfath
+- Initialize github repo and github project management for big task management "Technology of Multimedia"
+- Division of tasks between Arsyadana, Fatur, Alfath
 
-## Minggu 2
+## 2nd Week
 
 - Working on the prototypes of the program, threading was a pain for recording both audio and video. I wonder if there's a lib that can do this both simultaneously.
 
-## Minggu 3
+## 3rd Week
 
--
+- Report creation using latex
 
-## Minggu 4
+## 4th Week
 
 -
 
