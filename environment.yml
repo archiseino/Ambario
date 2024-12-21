@@ -153,6 +153,7 @@ dependencies:
       - llvmlite==0.43.0
       - matplotlib==3.9.2
       - mediapipe==0.10.18
+      - moviepy==2.1.1
       - msgpack==1.1.0
       - numba==0.60.0
       - numpy==1.26.0
