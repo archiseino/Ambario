@@ -10,13 +10,13 @@ Part of Final Project of Multimedia
 conda env create --file enviroment.yml
 ```
 
-This will create an enviroment with the name of `py310_multimedia`. You can activate by doing this
+- This will create an enviroment with the name of `py310_multimedia`. You can activate by doing this
 
 ```
 conda activate py310_multimedia
 ```
 
-Also for the record the successful proto is the `Ambario.py` program (right now)
+- Also for the record the successful proto is the `Ambario.py` program (right now)
 
 ```
 python Ambario.py
