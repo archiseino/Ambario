@@ -36,7 +36,7 @@ work on progress untuk logbook
 
 ## Minggu 1
 
-- Inisialisasi github repo dan github project management untuk manajemen tugas besar "Digitial Signal Processing"
+- Inisialisasi github repo dan github project management untuk manajemen tugas besar "Technology of Multimedia"
 - Pembagian tugas antara Arsyadana, Fatur, Alfath
 
 ## Minggu 2
