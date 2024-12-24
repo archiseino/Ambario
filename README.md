@@ -75,5 +75,5 @@ Lalu buka environemt yang sudah dibuat sebelumnya dengan, dan jalakan program ma
 
 ```yaml
 conda activate ambario
-(ambario) python main.py
+python Ambario.py
 ```
