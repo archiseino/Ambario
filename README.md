@@ -13,8 +13,8 @@
 | **Nama**             | **NIM**   | **ID GITHUB**                                                                               |
 | -------------------- | --------- | ------------------------------------------------------------------------------------------- |
 | Arsyadana Estu Aziz  | 121140068 | <a href="https://github.com/Archiseino">@Archiseino</a>                                     |
-| Fatur Arkan Syawalva | 121140229 | <a href="https://github.com/faturarkansyawalva_121140229">@faturarkansyawalva_121140229</a> |
-| Alfath Elnandra      | 121140175 | <a href="https://github.com/Mas.El">@Mas.El</a>                                             |
+| Fatur Arkan Syawalva | 121140229 | <a href="https://github.com/faturarkansyawalva121140229">@faturarkansyawalva_121140229</a> |
+| Alfath Elnandra      | 121140175 | <a href="https://github.com/Alfath12311">@Alfath12311</a>                                     |
 
 ---
 
