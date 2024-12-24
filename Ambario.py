@@ -258,7 +258,7 @@ class Game:
 
         pygame.quit()  
 
-def combine_audio_videoo(video_path, audio_path, output_path):
+def combine_audio_video(video_path, audio_path, output_path):
     video = VideoFileClip(video_path)
     audio = AudioFileClip(audio_path)
     final_video = video.with_audio(audio)
