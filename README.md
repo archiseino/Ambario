@@ -57,7 +57,7 @@ Berikut adalah daftar library Python yang digunakan dalam proyek ini, beserta fu
 
 ## **Fitur**
 
-### **1. Deteksi Terikan**
+### **1. Deteksi Teriakan**
 
 - Filter ini bekerja dengan cara user berteriak dan dari terikan tersebut akan ditentukan berapa tinggi lompatan yang akan dilakukan.
 
@@ -68,7 +68,7 @@ Berikut adalah daftar library Python yang digunakan dalam proyek ini, beserta fu
 ### Minggu 1
 
 - Inisialisasi github repo dan github project management untuk manajemen tugas besar "Multimedia"
-- Pembagian tugas antara Arsyadana, Fathur, dan Tobyanto dan Alfath
+- Pembagian tugas antara Arsyadana, Fathur, dan Alfath
 
 ### Minggu 2
 
@@ -106,7 +106,7 @@ conda activate ambario
 
 Atau
 
-Dengan requirements.txt
+### Dengan requirements.txt
 
 Atau jika Anda mengalami masalah dalam menggunakan environment.yml, anda bisa menggunakan requirements.txt. Jalankan perintah ini.
 
