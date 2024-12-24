@@ -57,7 +57,7 @@ Berikut adalah daftar library Python yang digunakan dalam proyek ini, beserta fu
 
 ## **Fitur**
 
-### **1. Deteksi Terikan**
+### **1. Deteksi Teriakan**
 
 - Filter ini bekerja dengan cara user berteriak dan dari terikan tersebut akan ditentukan berapa tinggi lompatan yang akan dilakukan.
 
