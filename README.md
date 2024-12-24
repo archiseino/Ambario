@@ -63,6 +63,32 @@ Berikut adalah daftar library Python yang digunakan dalam proyek ini, beserta fu
 
 ---
 
+## Logbook
+
+### Minggu 1
+
+- Inisialisasi github repo dan github project management untuk manajemen tugas besar "Multimedia"
+- Pembagian tugas antara Arsyadana, Fathur, dan Tobyanto dan Alfath
+
+### Minggu 2
+
+- Pembuatan branch baru pengembangan Game dan Sprite.
+- Mencoba konsep kode untuk threading dengan Audio dan Video recording + pygame.
+
+### Minggu 3
+
+- Pembuatan prototype selesai, masuk ke bagian implementasi UI.
+- Upload assets model yang berkaitan dengan game mario
+- Implementasi game mekanik lompat, mati dan menang
+
+### Minggu 4
+
+- Pembuatan project overleaf untuk laporan tugas besar Multimedia.
+- Refactor kode untuk memisahkan fungsi-fungsi yang berbeda ke dalam file yang berbeda dan membuat docstring pada tiap fungsi.
+- Pembuatan requirements.txt dan environment.yml untuk memudahkan instalasi library yang dibutuhkan.
+
+---
+
 ## **How to Run**
 
 Dengan asumsi bahwa sudah mempunyai environment manager seperti conda. maka buat environment baru seperti ini. Clone / fork lalu jalankan perintah ini.
@@ -75,5 +101,33 @@ Lalu buka environemt yang sudah dibuat sebelumnya dengan, dan jalakan program ma
 
 ```yaml
 conda activate ambario
-(ambario) python main.py
+(ambario) python Ambario.py
+```
+
+Atau
+
+Dengan requirements.txt
+
+Atau jika Anda mengalami masalah dalam menggunakan environment.yml, anda bisa menggunakan requirements.txt. Jalankan perintah ini.
+
+```yaml
+conda create -n ambario python=3.10
+```
+
+Lalu buka environment yang sudah dibuat sebelumnya dengan
+
+```yaml
+conda activate ambario
+```
+
+Jalankan perintah ini untuk menginstall library yang dibutuhkan.
+
+```yaml
+pip install -r requirements.txt
+```
+
+Lalu jalankan perintah ini untuk menjalankan program.
+
+```yaml
+python Ambario.py
 ```
