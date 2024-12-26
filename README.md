@@ -1,3 +1,7 @@
+# Tugas Besar Mata Kuliah Multimedia (IF4021)
+
+## Dosen Pengampu: **Martin Clinton Tosima Manullang, S.T., M.T..**
+
 # **Ambario**
 
 <p align="center">
@@ -20,8 +24,7 @@
 
 ## **Deskripsi Proyek**
 
-Proyek ini mengembangkan permainan interaktif menggunakan Pygame yang dikendalikan melalui
-input visual dari webcam dan input suara dari mikrofon secara real-time. Sistem memproses citra visual
+Proyek ini merupakan tugas akhir dari mata kuliah "Multimedia IF(4021)". Proyek ini mengembangkan permainan interaktif menggunakan Pygame yang dikendalikan melalui input visual dari webcam dan input suara dari mikrofon secara real-time. Sistem memproses citra visual
 menggunakan OpenCV (cv2) untuk mendeteksi gerakan atau isyarat, sementara tingkat kekerasan suara
 (desibel) dari mikrofon digunakan sebagai parameter untuk mengontrol aksi karakter dalam permainan,
 seperti melompat atau bergerak, menciptakan pengalaman bermain yang lebih dinamis dan responsif
